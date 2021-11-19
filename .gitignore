@@ -25,3 +25,6 @@ blitz_elixir_project-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+# env
+/.env

@@ -1,21 +1,22 @@
 # BlitzElixirProject
+Create a mix project application that:
 
-**TODO: Add description**
+- Given a valid summoner_name and region will fetch all summoners this summoner has
+played with in the last 5 matches. This data is returned to the caller as a list of
+summoner names (see below). Also, the following occurs:
+  - Once fetched, all summoners will be monitored for new matches every minute
+  for the next hour
+  - When a summoner plays a new match, the match id is logged to the console, such as: Summoner <summoner name> completed match <match id> The returned data should be formatted as: [summoner_name_1, summoner_name_2, ...]
 
-## Installation
+Please upload this project to Github and send us the link.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `blitz_elixir_project` to your list of dependencies in `mix.exs`:
+Notes:
+- Make use of Riot Developer API
+  - https://developer.riotgames.com/apis
+  - https://developer.riotgames.com/apis#summoner-v4
+  - https://developer.riotgames.com/apis#match-v5
 
-```elixir
-def deps do
-  [
-    {:blitz_elixir_project, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/blitz_elixir_project](https://hexdocs.pm/blitz_elixir_project).
+You will have to generate an api key. Please make this configurable so we can
+substitute our own key in order to test.
+- See the .env_template file. Please use the .env_template file to create your own .env file and replace the RIOT_API_KEY value with your own.
 
