@@ -3,7 +3,7 @@ defmodule BlitzElixirProject.SummonerMonitor do
   alias BlitzElixirProject.Summoner
   require Logger
   @minute 1000 * 60
-  @hour @minute * 60
+  @hour 1000 * 60 * 60
 
   def start_link(%{summoner: %Summoner{puuid: puuid}} = opts) do
     # if there are too many summoners names active in the system
@@ -25,8 +25,6 @@ defmodule BlitzElixirProject.SummonerMonitor do
       Logger.info(
         "summoner: #{updated_summoner.name} completed match: #{updated_summoner.last_match}"
       )
-    else
-      Logger.info("no update for #{updated_summoner.name}")
     end
 
     {:noreply, %{state | summoner: updated_summoner}}
