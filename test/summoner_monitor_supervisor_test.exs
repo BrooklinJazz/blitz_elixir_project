@@ -33,5 +33,22 @@ defmodule BlitzElixirProject.SummonerMonitorSupervisorTest do
 
       assert monitor1 === monitor2
     end
+
+    test "allow children to end their own process" do
+      {:ok, supervisor} = SummonerMonitorSupervisor.start_link()
+
+      assert {:ok, monitor} =
+               DynamicSupervisor.start_child(
+                 supervisor,
+                 {SummonerMonitor, %{summoner: Factory.summoner()}}
+               )
+
+      [_monitor] = DynamicSupervisor.which_children(supervisor) |> IO.inspect()
+
+      Process.send(monitor, :kill, [])
+      Process.sleep(100)
+
+      [] = DynamicSupervisor.which_children(supervisor)
+    end
   end
 end

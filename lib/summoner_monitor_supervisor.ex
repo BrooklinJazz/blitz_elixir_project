@@ -1,5 +1,5 @@
 defmodule BlitzElixirProject.SummonerMonitorSupervisor do
-  use DynamicSupervisor
+  use DynamicSupervisor, restart: :transient
 
   def start_link(opts \\ %{}) do
     DynamicSupervisor.start_link(__MODULE__, opts)

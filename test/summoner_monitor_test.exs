@@ -77,6 +77,17 @@ defmodule BlitzElixirProject.SummonerMonitorTest do
              end) =~ "summoner: #{name} completed match: #{different_match_uuid}"
     end
 
+    test "handle_info(:kill) _ allows you to end process" do
+      {:ok, monitor} =
+        SummonerMonitor.start_link(%{
+          summoner: Factory.summoner()
+        })
+
+      Process.send(monitor, :kill, [])
+      Process.sleep(10)
+      refute Process.alive?(monitor)
+    end
+
     test "handle_info(:kill) _ scheduled kill for timeout in ms" do
       {:ok, monitor} =
         SummonerMonitor.start_link(%{

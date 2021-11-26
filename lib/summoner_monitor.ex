@@ -1,5 +1,5 @@
 defmodule BlitzElixirProject.SummonerMonitor do
-  use GenServer
+  use GenServer, restart: :transient
   alias BlitzElixirProject.Summoner
   require Logger
   @minute 1000 * 60
@@ -12,7 +12,7 @@ defmodule BlitzElixirProject.SummonerMonitor do
   end
 
   def init(opts) do
-    Process.send(self(), :monitor, [])
+    Process.send_after(self(), :monitor, @minute)
     Process.send_after(self(), :kill, Map.get(opts, :timeout, @hour))
     {:ok, opts}
   end
