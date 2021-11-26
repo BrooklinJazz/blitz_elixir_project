@@ -22,7 +22,8 @@ defmodule BlitzElixirProject.MixProject do
   defp deps do
     [
       {:json, "~> 1.4"},
-      {:httpoison, "~> 1.8"}
+      {:httpoison, "~> 1.8"},
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 end
