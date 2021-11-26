@@ -14,6 +14,7 @@ defmodule BlitzElixirProject.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: {BlitzElixirProject, []},
       extra_applications: [:logger]
     ]
   end
@@ -23,7 +24,8 @@ defmodule BlitzElixirProject.MixProject do
     [
       {:json, "~> 1.4"},
       {:httpoison, "~> 1.8"},
-      {:mox, "~> 1.0", only: :test}
+      {:mox, "~> 1.0", only: :test},
+      {:faker, "~> 0.16", only: :test}
     ]
   end
 end

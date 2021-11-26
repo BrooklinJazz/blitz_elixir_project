@@ -2,11 +2,13 @@ defmodule BlitzElixirProject.RiotAPI do
   @moduledoc """
   API for retrieving Blogs.
   """
-  @callback get_summoners(String.t(), String.t()) :: [String.t()]
-  def get_summoners(summoner_name, region), do: impl().get_summoners(summoner_name, region)
+  @callback recent_competitor_names(String.t(), String.t()) :: [String.t()]
+  def recent_competitor_names(summoner_name, routing_value, number_of_matches \\ 5),
+    do: impl().recent_competitor_names(summoner_name, routing_value, number_of_matches)
 
   @callback get_summoner(String.t(), String.t()) :: map()
-  def get_summoner(summoner_name, region), do: impl().get_summoner(summoner_name, region)
+  def get_summoner(summoner_name, routing_value),
+    do: impl().get_summoner(summoner_name, routing_value)
 
   @callback get_matches(String.t(), integer()) :: [map()]
   def get_matches(summoner_puuid, count), do: impl().get_matches(summoner_puuid, count)
@@ -20,48 +22,45 @@ defmodule BlitzElixirProject.RiotAPI do
 end
 
 defmodule BlitzElixirProject.ProdRiotAPI do
-  defp api_key do
-    Application.fetch_env!(:blitz_elixir_project, :riot_api_key)
-  end
+  alias BlitzElixirProject.RegionConverter
+  alias BlitzElixirProject.Summoner
+  alias BlitzElixirProject.HTTPThrottle
 
-  def get_summoners(summoner_name, region) do
-    get_summoner(summoner_name, region)["puuid"]
-    |> recent_match_uuids(5)
-    |> Enum.map(&match_from_match_uuid/1)
-    |> Enum.flat_map(& &1["info"]["participants"])
-    |> Enum.map(& &1["summonerName"])
-    |> Enum.uniq()
-  end
-
-  defp match_from_match_uuid(match_id) do
-    match_url = "https://americas.api.riotgames.com/lol/match/v5/matches/#{match_id}"
-
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-           HTTPoison.get(match_url, [], params: [api_key: api_key()]),
-         {:ok, match} <- JSON.decode(body) do
-      match
+  def recent_competitor_names(summoner_name, routing_value, number_of_matches_to_include \\ 5) do
+    with %Summoner{puuid: puuid} <- get_summoner(summoner_name, routing_value) do
+      recent_match_uuids(puuid, number_of_matches_to_include)
+      |> Enum.map(&match_from_match_uuid(&1, routing_value))
+      |> Enum.flat_map(& &1["info"]["participants"])
+      |> Enum.map(& &1["summonerName"])
+      |> Enum.uniq()
     end
   end
 
-  def get_summoner(summoner_name, region) do
-    summoner_url =
-      "https://#{region}.api.riotgames.com/lol/summoner/v4/summoners/by-name/#{summoner_name}"
-
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-           HTTPoison.get(summoner_url, [], params: [api_key: api_key()]),
-         {:ok, response} <- JSON.decode(body) do
+  defp match_from_match_uuid(match_id, routing_value) do
+    with {:ok, response} <-
+           HTTPThrottle.get(
+             "https://#{RegionConverter.to_region(routing_value)}.api.riotgames.com/lol/match/v5/matches/#{match_id}"
+           ) do
       response
+    end
+  end
+
+  def get_summoner(summoner_name, routing_value) do
+    with {:ok, response} <-
+           HTTPThrottle.get(
+             "https://#{routing_value}.api.riotgames.com/lol/summoner/v4/summoners/by-name/#{summoner_name}"
+           ) do
+      %Summoner{name: response["name"], puuid: response["puuid"]}
     end
   end
 
   def recent_match_uuids(summoner_puuid, count) do
-    match_ids_by_puuids =
-      "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/#{summoner_puuid}/ids"
-
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-           HTTPoison.get(match_ids_by_puuids, [], params: [api_key: api_key(), count: count]),
-         {:ok, response} <- JSON.decode(body) do
-      response
+    with {:ok, uuids} <-
+           HTTPThrottle.get(
+             "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/#{summoner_puuid}/ids",
+             count: count
+           ) do
+      uuids
     end
   end
 
@@ -72,6 +71,9 @@ defmodule BlitzElixirProject.ProdRiotAPI do
   (assuming any match before a currently incomplete match is complete)
   """
   def last_completed_match_uuid(summoner_puuid) do
-    summoner_puuid |> recent_match_uuids(1) |> hd()
+    case recent_match_uuids(summoner_puuid, 1) do
+      {:error, error} -> {:error, error}
+      [uuid] -> uuid
+    end
   end
 end
